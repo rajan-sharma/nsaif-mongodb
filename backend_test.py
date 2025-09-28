@@ -381,6 +381,8 @@ class SecurityAssessmentTester:
         
         tests = [
             ("API Health Check", self.test_api_health),
+            ("Data Initialization", self.test_data_initialization),
+            ("Admin Login", self.test_admin_login),
             ("User Registration", self.test_user_registration),
             ("User Login", self.test_user_login),
             ("Authentication Middleware", self.test_authentication_middleware),
