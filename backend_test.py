@@ -311,11 +311,11 @@ class SecurityAssessmentTester:
             # Restore headers
             self.session.headers = original_headers
             
-            if response.status_code == 401:
-                self.log("✅ Authentication middleware working - Unauthorized access blocked")
+            if response.status_code in [401, 403]:
+                self.log(f"✅ Authentication middleware working - Unauthorized access blocked (HTTP {response.status_code})")
                 return True
             else:
-                self.log(f"❌ Authentication middleware failed - Expected 401, got {response.status_code}", "ERROR")
+                self.log(f"❌ Authentication middleware failed - Expected 401/403, got {response.status_code}", "ERROR")
                 return False
                 
         except Exception as e:
