@@ -259,7 +259,7 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex-1 bg-gray-50 p-6">
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           <span className="ml-3 text-gray-600">Loading dashboard...</span>
@@ -270,17 +270,15 @@ const Dashboard = () => {
 
   if (assessments.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex-1 bg-gray-50 p-6">
         <div className="max-w-4xl mx-auto py-12 px-4">
           <div className="text-center">
             <h1 className="text-3xl font-bold text-gray-900 mb-4">Assessment Dashboard</h1>
             <p className="text-gray-600 mb-8">Please take an assessment to see your results.</p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Take Assessment
-            </button>
+            <div className="p-6 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-blue-800 mb-4">No assessments found. Please complete an assessment first to view your results and analytics.</p>
+              <p className="text-sm text-blue-600">Navigate to the Assessment tab to start your security evaluation.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -288,7 +286,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="flex-1 bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
