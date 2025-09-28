@@ -707,6 +707,81 @@ const Assessment = () => {
   );
 };
 
+// Main App Container
+const MainApp = () => {
+  const [currentPage, setCurrentPage] = useState('assessment');
+  const { user, logout } = useAuth();
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b px-6 py-4">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Security Assessment</h1>
+            <p className="text-gray-600">Welcome, {user?.email}</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <button className="p-2 text-gray-600 hover:text-gray-900">
+              <span>⚙️</span>
+            </button>
+            <button className="p-2 text-gray-600 hover:text-gray-900">
+              <span>👤</span>
+            </button>
+            <button
+              onClick={logout}
+              className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex">
+        {/* Left Navigation Panel */}
+        <nav className="w-64 bg-white shadow-sm h-screen sticky top-0 border-r">
+          <div className="p-4">
+            <div className="space-y-2">
+              <button
+                onClick={() => setCurrentPage('assessment')}
+                className={`w-full flex items-center p-3 rounded-lg transition-colors ${
+                  currentPage === 'assessment'
+                    ? 'bg-blue-100 text-blue-800 border-l-4 border-blue-600'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <span className="mr-3">📝</span>
+                <span className="font-medium">Assessment</span>
+              </button>
+              <button
+                onClick={() => setCurrentPage('dashboard')}
+                className={`w-full flex items-center p-3 rounded-lg transition-colors ${
+                  currentPage === 'dashboard'
+                    ? 'bg-blue-100 text-blue-800 border-l-4 border-blue-600'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <span className="mr-3">📊</span>
+                <span className="font-medium">Dashboard</span>
+              </button>
+            </div>
+          </div>
+        </nav>
+
+        {/* Main Content */}
+        <main className="flex-1">
+          {currentPage === 'assessment' ? (
+            <Assessment setCurrentPage={setCurrentPage} />
+          ) : (
+            <Dashboard />
+          )}
+        </main>
+      </div>
+    </div>
+  );
+};
+
 // Main App Component
 function App() {
   const { user, loading } = useAuth();
@@ -721,7 +796,7 @@ function App() {
 
   return (
     <div className="App">
-      {user ? <Assessment /> : <Login />}
+      {user ? <MainApp /> : <Login />}
     </div>
   );
 }
