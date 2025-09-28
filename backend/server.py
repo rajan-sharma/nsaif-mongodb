@@ -294,22 +294,110 @@ async def get_assessment_stats(assessment_id: str, current_user: User = Depends(
     responses = await db.user_responses.find({"assessment_id": assessment_id}).to_list(length=None)
     
     if not responses:
-        return {"total_responses": 0, "domains_completed": 0, "overall_average": 0}
+        return {"total_responses": 0, "domains_completed": 0, "overall_average": 0, "domain_scores": [], "control_performance": []}
     
-    # Calculate stats
+    # Calculate basic stats
     total_responses = len(responses)
     total_score = sum(response["score_value"] for response in responses)
     overall_average = round(total_score / total_responses, 2) if total_responses > 0 else 0
     
     # Get unique domains completed
-    domains_completed = len(set(response["domain_id"] for response in responses))
+    unique_domains = set(response["domain_id"] for response in responses)
+    domains_completed = len(unique_domains)
+    
+    # Calculate domain-wise scores
+    domain_scores = {}
+    control_performance = {}
+    
+    for response in responses:
+        domain_id = response["domain_id"]
+        control_id = response["control_id"]
+        score = response["score_value"]
+        
+        # Domain scores
+        if domain_id not in domain_scores:
+            domain_scores[domain_id] = {"scores": [], "total": 0, "count": 0}
+        domain_scores[domain_id]["scores"].append(score)
+        domain_scores[domain_id]["total"] += score
+        domain_scores[domain_id]["count"] += 1
+        
+        # Control performance
+        if control_id not in control_performance:
+            control_performance[control_id] = {"scores": [], "total": 0, "count": 0, "domain_id": domain_id}
+        control_performance[control_id]["scores"].append(score)
+        control_performance[control_id]["total"] += score
+        control_performance[control_id]["count"] += 1
+    
+    # Get domain names
+    domains = await db.domains.find().to_list(length=None)
+    domain_name_map = {d["id"]: d["name"] for d in domains}
+    
+    # Get control names  
+    controls = await db.controls.find().to_list(length=None)
+    control_name_map = {c["id"]: c["name"] for c in controls}
+    
+    # Format domain scores with names and averages
+    domain_stats = []
+    for domain_id, data in domain_scores.items():
+        avg_score = round(data["total"] / data["count"], 2)
+        domain_stats.append({
+            "domain_id": domain_id,
+            "domain_name": domain_name_map.get(domain_id, "Unknown"),
+            "average_score": avg_score,
+            "total_questions": data["count"],
+            "total_score": data["total"]
+        })
+    
+    # Format control performance
+    control_stats = []
+    for control_id, data in control_performance.items():
+        avg_score = round(data["total"] / data["count"], 2)
+        control_stats.append({
+            "control_id": control_id,
+            "control_name": control_name_map.get(control_id, "Unknown"),
+            "domain_id": data["domain_id"],
+            "domain_name": domain_name_map.get(data["domain_id"], "Unknown"),
+            "average_score": avg_score,
+            "total_questions": data["count"]
+        })
+    
+    # Find top strengths and focus areas
+    sorted_domains = sorted(domain_stats, key=lambda x: x["average_score"], reverse=True)
+    top_strengths = sorted_domains[:2] if len(sorted_domains) >= 2 else sorted_domains
+    focus_areas = sorted_domains[-2:] if len(sorted_domains) >= 2 else []
     
     return {
         "total_responses": total_responses,
         "domains_completed": domains_completed,
         "overall_average": overall_average,
-        "submission_date": assessment["submission_date"]
+        "submission_date": assessment["submission_date"],
+        "domain_scores": domain_stats,
+        "control_performance": control_stats,
+        "top_strengths": top_strengths,
+        "focus_areas": focus_areas
     }
+
+# Admin endpoints
+@api_router.post("/admin/create-user")
+async def create_admin_user(user_data: UserCreate, current_user: User = Depends(get_current_user)):
+    # Check if current user is admin
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Check if user already exists
+    existing_user = await db.users.find_one({"email": user_data.email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Create new admin user
+    user_dict = user_data.dict()
+    user_dict["password_hash"] = hash_password(user_dict.pop("password"))
+    user_dict["role"] = "admin"  # Force admin role
+    user = User(**user_dict)
+    
+    await db.users.insert_one(user.dict())
+    
+    return {"message": "Admin user created successfully", "email": user.email, "role": user.role}
 
 # Initialize sample data
 @api_router.post("/admin/init-data")
