@@ -623,6 +623,24 @@ async def initialize_sample_data():
         ]
     }
 
+@api_router.post("/admin/clear-data")
+async def clear_all_data():
+    """Clear all data from database - USE WITH CAUTION"""
+    try:
+        # Clear all collections
+        await db.domains.delete_many({})
+        await db.subdomains.delete_many({})
+        await db.controls.delete_many({})
+        await db.metrics.delete_many({})
+        await db.questions.delete_many({})
+        await db.users.delete_many({})
+        await db.user_assessments.delete_many({})
+        await db.user_responses.delete_many({})
+        
+        return {"message": "All data cleared successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error clearing data: {str(e)}")
+
 # Include the router in the main app
 app.include_router(api_router)
 
