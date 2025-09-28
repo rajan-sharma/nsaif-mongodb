@@ -532,28 +532,60 @@ const Assessment = () => {
         {/* Left Navigation Panel */}
         <nav className="w-64 bg-white shadow-sm h-screen sticky top-0 border-r">
           <div className="p-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Domains</h2>
-            <div className="space-y-2">
-              {domains.map((domain, index) => (
-                <div
-                  key={domain.id}
-                  className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${
-                    index === currentDomainIndex
-                      ? 'bg-blue-100 text-blue-800 border-l-4 border-blue-600'
-                      : index < currentDomainIndex
-                      ? 'bg-green-50 text-green-700'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                  onClick={() => setCurrentDomainIndex(index)}
-                >
-                  <span className="mr-3 text-xl">{domain.icon}</span>
-                  <span className="font-medium">{domain.name}</span>
-                  {index < currentDomainIndex && (
-                    <span className="ml-auto text-green-600">✓</span>
-                  )}
-                </div>
-              ))}
+            {/* Main Navigation */}
+            <div className="mb-6">
+              <button
+                onClick={() => setCurrentPage('assessment')}
+                className={`w-full flex items-center p-3 rounded-lg mb-2 transition-colors ${
+                  currentPage === 'assessment'
+                    ? 'bg-blue-100 text-blue-800 border-l-4 border-blue-600'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <span className="mr-3">📝</span>
+                <span className="font-medium">Assessment</span>
+              </button>
+              <button
+                onClick={() => setCurrentPage('dashboard')}
+                className={`w-full flex items-center p-3 rounded-lg transition-colors ${
+                  currentPage === 'dashboard'
+                    ? 'bg-blue-100 text-blue-800 border-l-4 border-blue-600'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <span className="mr-3">📊</span>
+                <span className="font-medium">Dashboard</span>
+              </button>
             </div>
+
+            {/* Domain Navigation (only show if on assessment page) */}
+            {currentPage === 'assessment' && (
+              <>
+                <hr className="mb-4" />
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Domains</h2>
+                <div className="space-y-2">
+                  {domains.map((domain, index) => (
+                    <div
+                      key={domain.id}
+                      className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${
+                        index === currentDomainIndex
+                          ? 'bg-blue-100 text-blue-800 border-l-4 border-blue-600'
+                          : index < currentDomainIndex
+                          ? 'bg-green-50 text-green-700'
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                      onClick={() => setCurrentDomainIndex(index)}
+                    >
+                      <span className="mr-3 text-xl">{domain.icon}</span>
+                      <span className="font-medium text-sm">{domain.name.length > 15 ? domain.name.substring(0, 15) + '...' : domain.name}</span>
+                      {index < currentDomainIndex && (
+                        <span className="ml-auto text-green-600">✓</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </nav>
 
