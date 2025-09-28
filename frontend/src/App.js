@@ -486,11 +486,14 @@ const Assessment = () => {
         }))
       };
 
-      await axios.post(`${API}/assessments/submit`, submissionData);
-      // Redirect to dashboard or show success message
-      window.location.reload(); // Simple approach for demo
+      const response = await axios.post(`${API}/assessments/submit`, submissionData);
+      console.log('Assessment submitted successfully:', response.data);
+      
+      // Redirect to dashboard
+      setCurrentPage('dashboard');
     } catch (error) {
       console.error('Error submitting assessment:', error);
+      alert('Error submitting assessment. Please try again.');
     } finally {
       setSubmitting(false);
     }
