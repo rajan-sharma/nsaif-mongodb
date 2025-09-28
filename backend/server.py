@@ -852,8 +852,8 @@ async def initialize_sample_data():
     
     await db.questions.insert_many(all_questions)
     
-    # Create default admin users
-    admin_users = [
+    # Create default admin and test users
+    default_users = [
         User(
             first_name="Admin",
             last_name="User", 
@@ -871,11 +871,20 @@ async def initialize_sample_data():
             designation="Platform Administrator",
             password_hash=hash_password("admin123"),
             role="admin"
+        ),
+        User(
+            first_name="Test",
+            last_name="User",
+            organization_name="Test Organization",
+            email="testuser@example.com",
+            designation="Security Analyst",
+            password_hash=hash_password("user123"),
+            role="user"
         )
     ]
     
-    for admin in admin_users:
-        await db.users.insert_one(admin.dict())
+    for user in default_users:
+        await db.users.insert_one(user.dict())
     
     return {
         "message": "Complete sample data initialized successfully", 
