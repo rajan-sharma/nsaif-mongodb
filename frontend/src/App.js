@@ -406,14 +406,13 @@ const Dashboard = () => {
 };
 
 // Assessment Component
-const Assessment = () => {
+const Assessment = ({ setCurrentPage }) => {
   const [domains, setDomains] = useState([]);
   const [currentDomainIndex, setCurrentDomainIndex] = useState(0);
   const [questions, setQuestions] = useState([]);
   const [responses, setResponses] = useState({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const { user, logout } = useAuth();
 
   useEffect(() => {
     loadDomains();
