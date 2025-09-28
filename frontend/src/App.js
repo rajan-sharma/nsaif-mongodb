@@ -397,6 +397,21 @@ const MainApp = () => {
               <span className="font-medium">Dashboard</span>
             </button>
 
+            {/* Admin Panel - Only show for admins */}
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => setCurrentView('admin')}
+                className={`w-full flex items-center p-3 rounded-lg mb-3 transition-colors ${
+                  currentView === 'admin'
+                    ? 'bg-red-100 text-red-800 border-l-4 border-red-600'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <span className="mr-3">⚙️</span>
+                <span className="font-medium">Admin Panel</span>
+              </button>
+            )}
+
             {/* Domains Section */}
             <div className="mb-2">
               <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">Assessment Domains</h3>
