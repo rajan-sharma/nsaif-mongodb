@@ -431,43 +431,77 @@ async def delete_user_by_admin(user_id: str, current_user: User = Depends(get_cu
     return {"message": "User deleted successfully"}
 
 # Admin Statistics
-@api_router.get("/admin/stats")
-async def get_admin_stats(current_user: User = Depends(get_current_user)):
+@api_router.get("/admin/platform-stats")
+async def get_platform_stats(current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
-    # Get user statistics
+    # User statistics
     total_users = await db.users.count_documents({})
     admin_users = await db.users.count_documents({"role": "admin"})
     regular_users = await db.users.count_documents({"role": "user"})
     
-    # Get assessment statistics
+    # Assessment statistics
     total_assessments = await db.user_assessments.count_documents({})
     total_responses = await db.user_responses.count_documents({})
     
-    # Get recent assessments
-    recent_assessments = await db.user_assessments.find().sort("submission_date", -1).limit(5).to_list(length=5)
+    # Get recent assessments with user details
+    recent_assessments = await db.user_assessments.find().sort("submission_date", -1).limit(10).to_list(length=10)
+    for assessment in recent_assessments:
+        user = await db.users.find_one({"id": assessment["user_id"]})
+        assessment["user_name"] = f"{user['first_name']} {user['last_name']}" if user else "Unknown"
+        assessment["user_email"] = user["email"] if user else "Unknown"
     
-    # Get user assessment counts
-    user_assessment_counts = []
+    # User assessment activity
+    user_activities = []
     users = await db.users.find({"role": "user"}).to_list(length=None)
     for user in users:
         assessment_count = await db.user_assessments.count_documents({"user_id": user["id"]})
-        user_assessment_counts.append({
+        latest_assessment = await db.user_assessments.find_one({"user_id": user["id"]}, sort=[("submission_date", -1)])
+        
+        user_activities.append({
             "user_id": user["id"],
             "name": f"{user['first_name']} {user['last_name']}",
             "email": user["email"],
-            "assessment_count": assessment_count
+            "organization": user["organization_name"],
+            "assessment_count": assessment_count,
+            "latest_assessment": latest_assessment["submission_date"] if latest_assessment else None,
+            "status": user.get("status", "active")
         })
     
     return {
-        "total_users": total_users,
-        "admin_users": admin_users,
-        "regular_users": regular_users,
-        "total_assessments": total_assessments,
-        "total_responses": total_responses,
+        "user_stats": {
+            "total_users": total_users,
+            "admin_users": admin_users,
+            "regular_users": regular_users
+        },
+        "assessment_stats": {
+            "total_assessments": total_assessments,
+            "total_responses": total_responses,
+            "average_responses_per_assessment": round(total_responses / total_assessments, 2) if total_assessments > 0 else 0
+        },
         "recent_assessments": recent_assessments,
-        "user_assessment_counts": user_assessment_counts
+        "user_activities": user_activities
+    }
+
+# Admin Content Management
+@api_router.get("/admin/content-stats")
+async def get_content_stats(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    domains_count = await db.domains.count_documents({})
+    subdomains_count = await db.subdomains.count_documents({})
+    controls_count = await db.controls.count_documents({})
+    metrics_count = await db.metrics.count_documents({})
+    questions_count = await db.questions.count_documents({})
+    
+    return {
+        "domains": domains_count,
+        "subdomains": subdomains_count,
+        "controls": controls_count,
+        "metrics": metrics_count,
+        "questions": questions_count
     }
 
 # Admin Content Management - Domains
