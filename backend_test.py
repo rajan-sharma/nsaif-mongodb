@@ -297,6 +297,57 @@ class SecurityAssessmentTester:
             self.log(f"❌ Get assessment stats error: {str(e)}", "ERROR")
             return False
     
+    def test_admin_login(self):
+        """Test admin user login with default credentials"""
+        try:
+            login_data = {
+                "email": "admin@secassess.com",
+                "password": "admin123"
+            }
+            
+            response = self.session.post(f"{self.base_url}/auth/login", json=login_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "token" in data and "user" in data:
+                    if data["user"]["role"] == "admin":
+                        self.log(f"✅ Admin login successful - Role: {data['user']['role']}")
+                        return True
+                    else:
+                        self.log(f"❌ Admin login failed - Expected admin role, got: {data['user']['role']}", "ERROR")
+                        return False
+                else:
+                    self.log(f"❌ Admin login response missing required fields: {data}", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Admin login failed: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Admin login error: {str(e)}", "ERROR")
+            return False
+    
+    def test_data_initialization(self):
+        """Test sample data initialization endpoint"""
+        try:
+            response = self.session.post(f"{self.base_url}/admin/init-data")
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "message" in data:
+                    self.log(f"✅ Data initialization endpoint working - Message: {data['message']}")
+                    return True
+                else:
+                    self.log(f"❌ Data initialization response missing message: {data}", "ERROR")
+                    return False
+            else:
+                self.log(f"❌ Data initialization failed: {response.status_code} - {response.text}", "ERROR")
+                return False
+                
+        except Exception as e:
+            self.log(f"❌ Data initialization error: {str(e)}", "ERROR")
+            return False
+    
     def test_authentication_middleware(self):
         """Test that protected endpoints require authentication"""
         try:
