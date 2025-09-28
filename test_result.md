@@ -204,8 +204,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Authentication System"
-    - "Assessment API Endpoints"
     - "Authentication UI"
     - "Assessment Interface"
   stuck_tasks: []
