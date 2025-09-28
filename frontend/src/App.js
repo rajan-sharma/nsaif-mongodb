@@ -807,6 +807,9 @@ const MainApp = () => {
                 )}
               </div>
             </div>
+          ) : currentView === 'admin' ? (
+            // Admin Panel View
+            <AdminPanel />
           ) : (
             // Assessment View
             <div className="p-6">
