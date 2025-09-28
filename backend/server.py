@@ -891,10 +891,12 @@ async def initialize_sample_data():
         "domains_created": len(domains),
         "questions_per_domain": 2,
         "total_questions": len(all_questions),
+        "users_created": len(default_users),
         "admin_credentials": [
             {"email": "admin@secassess.com", "password": "admin123"},
             {"email": "rks9454@gmail.com", "password": "admin123"}
-        ]
+        ],
+        "test_user_credentials": {"email": "testuser@example.com", "password": "user123"}
     }
 
 @api_router.post("/admin/clear-data")
