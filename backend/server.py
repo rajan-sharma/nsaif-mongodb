@@ -153,6 +153,11 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+# Basic endpoint
+@api_router.get("/")
+async def root():
+    return {"message": "Security Assessment API is running"}
+
 # Auth endpoints
 @api_router.post("/auth/register")
 async def register_user(user_data: UserCreate):
