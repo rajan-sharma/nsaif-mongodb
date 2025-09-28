@@ -377,34 +377,36 @@ async def get_assessment_stats(assessment_id: str, current_user: User = Depends(
         "focus_areas": focus_areas
     }
 
-# Admin User Management
-@api_router.get("/admin/users", response_model=List[User])
+# Admin User Management Endpoints
+@api_router.get("/admin/users")
 async def get_all_users(current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
     users = await db.users.find().to_list(length=None)
-    return [User(**user) for user in users]
+    return users
 
 @api_router.post("/admin/users")
-async def create_user(user_data: UserCreate, role: str, current_user: User = Depends(get_current_user)):
+async def create_user_by_admin(user_data: dict, current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
-    existing_user = await db.users.find_one({"email": user_data.email})
+    # Check if user already exists
+    existing_user = await db.users.find_one({"email": user_data["email"]})
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    user_dict = user_data.dict()
+    # Create user
+    user_dict = user_data.copy()
     user_dict["password_hash"] = hash_password(user_dict.pop("password"))
-    user_dict["role"] = role
+    user_dict["id"] = str(uuid.uuid4())
     user = User(**user_dict)
     
     await db.users.insert_one(user.dict())
-    return {"message": f"{role.title()} created successfully", "user": user}
+    return {"message": f"{user_data.get('role', 'user').title()} created successfully", "user": user.dict()}
 
 @api_router.put("/admin/users/{user_id}")
-async def update_user(user_id: str, updates: dict, current_user: User = Depends(get_current_user)):
+async def update_user_by_admin(user_id: str, updates: dict, current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
@@ -418,7 +420,7 @@ async def update_user(user_id: str, updates: dict, current_user: User = Depends(
     return {"message": "User updated successfully"}
 
 @api_router.delete("/admin/users/{user_id}")
-async def delete_user(user_id: str, current_user: User = Depends(get_current_user)):
+async def delete_user_by_admin(user_id: str, current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     
