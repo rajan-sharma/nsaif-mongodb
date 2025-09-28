@@ -213,6 +213,155 @@ const Login = () => {
   );
 };
 
+// Admin Panel Component
+const AdminPanel = () => {
+  const [platformStats, setPlatformStats] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadAdminData();
+  }, []);
+
+  const loadAdminData = async () => {
+    try {
+      const [statsRes, usersRes] = await Promise.all([
+        axios.get(`${API}/admin/platform-stats`),
+        axios.get(`${API}/admin/users`)
+      ]);
+      
+      setPlatformStats(statsRes.data);
+      setUsers(usersRes.data);
+    } catch (error) {
+      console.error('Error loading admin data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+          <span className="ml-3 text-gray-600">Loading admin data...</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Admin Panel</h1>
+
+        {/* Platform Statistics */}
+        {platformStats && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Users</h3>
+                <div className="text-3xl font-bold text-blue-600">{platformStats.user_stats.total_users}</div>
+                <div className="text-sm text-gray-500">Admin: {platformStats.user_stats.admin_users} | Users: {platformStats.user_stats.regular_users}</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Assessments</h3>
+                <div className="text-3xl font-bold text-green-600">{platformStats.assessment_stats.total_assessments}</div>
+                <div className="text-sm text-gray-500">Responses: {platformStats.assessment_stats.total_responses}</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Avg Responses</h3>
+                <div className="text-3xl font-bold text-purple-600">{platformStats.assessment_stats.average_responses_per_assessment}</div>
+                <div className="text-sm text-gray-500">Per Assessment</div>
+              </div>
+            </div>
+
+            {/* User Management */}
+            <div className="bg-white rounded-lg shadow mb-8">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">User Management</h3>
+              </div>
+              <div className="p-6">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organization</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {users.map((user) => (
+                        <tr key={user.id}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="font-medium text-gray-900">{user.first_name} {user.last_name}</div>
+                            <div className="text-sm text-gray-500">{user.designation}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.email}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.organization_name}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              user.role === 'admin' 
+                                ? 'bg-red-100 text-red-800' 
+                                : 'bg-green-100 text-green-800'
+                            }`}>
+                              {user.role}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              user.status === 'active' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {user.status || 'active'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* User Activity */}
+            <div className="bg-white rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">User Assessment Activity</h3>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {platformStats.user_activities.map((activity) => (
+                    <div key={activity.user_id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="font-medium text-gray-900">{activity.name}</div>
+                      <div className="text-sm text-gray-600">{activity.email}</div>
+                      <div className="text-sm text-gray-500">{activity.organization}</div>
+                      <div className="mt-2">
+                        <span className="text-sm font-medium text-blue-600">
+                          {activity.assessment_count} assessments
+                        </span>
+                        {activity.latest_assessment && (
+                          <div className="text-xs text-gray-500">
+                            Last: {new Date(activity.latest_assessment).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // Main App Container
 const MainApp = () => {
   const [currentView, setCurrentView] = useState('dashboard');
