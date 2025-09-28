@@ -235,7 +235,9 @@ const MainApp = () => {
 
   useEffect(() => {
     if (assessments.length > 0 && !currentAssessment) {
-      setCurrentAssessment(assessments[0]);
+      // Sort assessments by submission_date to get the latest one
+      const sortedAssessments = [...assessments].sort((a, b) => new Date(b.submission_date) - new Date(a.submission_date));
+      setCurrentAssessment(sortedAssessments[0]);
     }
   }, [assessments]);
 
