@@ -644,7 +644,7 @@ const Assessment = ({ setCurrentPage }) => {
               )}
             </div>
           )}
-        </main>
+        </div>
       </div>
     </div>
   );
