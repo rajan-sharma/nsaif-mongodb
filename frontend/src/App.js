@@ -502,94 +502,38 @@ const Assessment = ({ setCurrentPage }) => {
   const isLastDomain = currentDomainIndex === domains.length - 1;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b px-6 py-4">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Security Assessment</h1>
-            <p className="text-gray-600">Welcome, {user?.email}</p>
-          </div>
-          <div className="flex items-center space-x-4">
-            <button className="p-2 text-gray-600 hover:text-gray-900">
-              <span>⚙️</span>
-            </button>
-            <button className="p-2 text-gray-600 hover:text-gray-900">
-              <span>👤</span>
-            </button>
-            <button
-              onClick={logout}
-              className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700"
-            >
-              Logout
-            </button>
+    <div className="flex-1 p-6 bg-gray-50">
+      {/* Domain Navigation Sidebar */}
+      <div className="flex">
+        <div className="w-64 bg-white shadow-sm rounded-lg p-4 mr-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Assessment Domains</h2>
+          <div className="space-y-2">
+            {domains.map((domain, index) => (
+              <div
+                key={domain.id}
+                className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${
+                  index === currentDomainIndex
+                    ? 'bg-blue-100 text-blue-800 border-l-4 border-blue-600'
+                    : index < currentDomainIndex
+                    ? 'bg-green-50 text-green-700'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+                onClick={() => setCurrentDomainIndex(index)}
+              >
+                <span className="mr-3 text-xl">{domain.icon}</span>
+                <div className="flex-1">
+                  <div className="font-medium text-sm">{domain.name}</div>
+                </div>
+                {index < currentDomainIndex && (
+                  <span className="ml-auto text-green-600">✓</span>
+                )}
+              </div>
+            ))}
           </div>
         </div>
-      </header>
 
-      <div className="flex">
-        {/* Left Navigation Panel */}
-        <nav className="w-64 bg-white shadow-sm h-screen sticky top-0 border-r">
-          <div className="p-4">
-            {/* Main Navigation */}
-            <div className="mb-6">
-              <button
-                onClick={() => setCurrentPage('assessment')}
-                className={`w-full flex items-center p-3 rounded-lg mb-2 transition-colors ${
-                  currentPage === 'assessment'
-                    ? 'bg-blue-100 text-blue-800 border-l-4 border-blue-600'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <span className="mr-3">📝</span>
-                <span className="font-medium">Assessment</span>
-              </button>
-              <button
-                onClick={() => setCurrentPage('dashboard')}
-                className={`w-full flex items-center p-3 rounded-lg transition-colors ${
-                  currentPage === 'dashboard'
-                    ? 'bg-blue-100 text-blue-800 border-l-4 border-blue-600'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <span className="mr-3">📊</span>
-                <span className="font-medium">Dashboard</span>
-              </button>
-            </div>
-
-            {/* Domain Navigation (only show if on assessment page) */}
-            {currentPage === 'assessment' && (
-              <>
-                <hr className="mb-4" />
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Domains</h2>
-                <div className="space-y-2">
-                  {domains.map((domain, index) => (
-                    <div
-                      key={domain.id}
-                      className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${
-                        index === currentDomainIndex
-                          ? 'bg-blue-100 text-blue-800 border-l-4 border-blue-600'
-                          : index < currentDomainIndex
-                          ? 'bg-green-50 text-green-700'
-                          : 'text-gray-600 hover:bg-gray-50'
-                      }`}
-                      onClick={() => setCurrentDomainIndex(index)}
-                    >
-                      <span className="mr-3 text-xl">{domain.icon}</span>
-                      <span className="font-medium text-sm">{domain.name.length > 15 ? domain.name.substring(0, 15) + '...' : domain.name}</span>
-                      {index < currentDomainIndex && (
-                        <span className="ml-auto text-green-600">✓</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        </nav>
-
-        {/* Main Content Area */}
-        <main className="flex-1 p-6">
+        {/* Main Assessment Content */}
+        <div className="flex-1">
           {domains.length > 0 && (
             <div className="max-w-4xl mx-auto">
               {/* Domain Header */}
