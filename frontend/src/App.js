@@ -213,6 +213,198 @@ const Login = () => {
   );
 };
 
+// Dashboard Component
+const Dashboard = () => {
+  const [assessments, setAssessments] = useState([]);
+  const [currentAssessment, setCurrentAssessment] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const { user, logout } = useAuth();
+
+  useEffect(() => {
+    loadAssessments();
+  }, []);
+
+  useEffect(() => {
+    if (assessments.length > 0 && !currentAssessment) {
+      // Load latest assessment by default
+      setCurrentAssessment(assessments[0]);
+    }
+  }, [assessments]);
+
+  useEffect(() => {
+    if (currentAssessment) {
+      loadAssessmentStats(currentAssessment.id);
+    }
+  }, [currentAssessment]);
+
+  const loadAssessments = async () => {
+    try {
+      const response = await axios.get(`${API}/assessments/my-assessments`);
+      setAssessments(response.data);
+    } catch (error) {
+      console.error('Error loading assessments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadAssessmentStats = async (assessmentId) => {
+    try {
+      const response = await axios.get(`${API}/dashboard/stats/${assessmentId}`);
+      setStats(response.data);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Loading dashboard...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (assessments.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto py-12 px-4">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Assessment Dashboard</h1>
+            <p className="text-gray-600 mb-8">Please take an assessment to see your results.</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Take Assessment
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Assessment Dashboard</h1>
+          <p className="text-gray-600 mb-4">A comprehensive overview of your assessment progress and insights.</p>
+          
+          {/* Assessment Selector */}
+          <div className="flex items-center space-x-4">
+            <label className="text-sm font-medium text-gray-700">Assessment:</label>
+            <select 
+              value={currentAssessment?.id || ''}
+              onChange={(e) => {
+                const selected = assessments.find(a => a.id === e.target.value);
+                setCurrentAssessment(selected);
+              }}
+              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {assessments.map((assessment, index) => (
+                <option key={assessment.id} value={assessment.id}>
+                  Assessment {index + 1} - {new Date(assessment.submission_date).toLocaleDateString()}
+                </option>
+              ))}
+            </select>
+            <span className="text-sm text-gray-500">
+              {currentAssessment && new Date(currentAssessment.submission_date).toLocaleString()}
+            </span>
+          </div>
+        </div>
+
+        {stats && (
+          <>
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Responses</h3>
+                <div className="text-3xl font-bold text-blue-600">{stats.total_responses}</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Domains Completed</h3>
+                <div className="text-3xl font-bold text-green-600">{stats.domains_completed}</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Overall Average Score</h3>
+                <div className="text-3xl font-bold text-purple-600">{stats.overall_average}/5</div>
+                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                  <div
+                    className="bg-purple-600 h-2 rounded-full"
+                    style={{ width: `${(stats.overall_average / 5) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex space-x-4 mb-8">
+              <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                Overview Graph
+              </button>
+              <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                Analytics
+              </button>
+              <button className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                Export PDF
+              </button>
+            </div>
+
+            {/* Overall Assessment Score Bar */}
+            <div className="bg-white rounded-lg shadow p-6 mb-8">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Overall Assessment Score</h3>
+              <div className="flex items-center">
+                <div className="flex-1">
+                  <div className="flex justify-between text-sm text-gray-600 mb-2">
+                    <span>0</span>
+                    <span>Current Score: {stats.overall_average}</span>
+                    <span>5</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-4">
+                    <div
+                      className="bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-4 rounded-full transition-all duration-500"
+                      style={{ width: `${(stats.overall_average / 5) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+                <div className="ml-4 text-2xl font-bold text-gray-900">
+                  {stats.overall_average}/5
+                </div>
+              </div>
+            </div>
+
+            {/* Placeholder for additional analytics */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Assessment Analysis</h3>
+              <p className="text-gray-600">
+                Your assessment has been successfully completed and recorded. 
+                Advanced analytics including domain-specific breakdowns, radar charts, and detailed control analysis will be available in the next update.
+              </p>
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center">
+                  <span className="text-blue-600 mr-2">📊</span>
+                  <div>
+                    <div className="font-medium text-blue-900">Assessment Complete</div>
+                    <div className="text-sm text-blue-700">
+                      Score: {stats.overall_average}/5 • Questions: {stats.total_responses} • Domains: {stats.domains_completed}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // Assessment Component
 const Assessment = () => {
   const [domains, setDomains] = useState([]);
