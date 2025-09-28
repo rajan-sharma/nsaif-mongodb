@@ -504,6 +504,176 @@ async def get_content_stats(current_user: User = Depends(get_current_user)):
         "questions": questions_count
     }
 
+# Domains CRUD
+@api_router.get("/admin/domains")
+async def get_domains_admin(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    domains = await db.domains.find().sort("order", 1).to_list(length=None)
+    return domains
+
+@api_router.post("/admin/domains")
+async def create_domain(domain_data: dict, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    domain_data["id"] = str(uuid.uuid4())
+    await db.domains.insert_one(domain_data)
+    return {"message": "Domain created successfully"}
+
+@api_router.put("/admin/domains/{domain_id}")
+async def update_domain(domain_id: str, updates: dict, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    result = await db.domains.update_one({"id": domain_id}, {"$set": updates})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Domain not found")
+    return {"message": "Domain updated successfully"}
+
+@api_router.delete("/admin/domains/{domain_id}")
+async def delete_domain(domain_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    result = await db.domains.delete_one({"id": domain_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Domain not found")
+    return {"message": "Domain deleted successfully"}
+
+# Subdomains CRUD  
+@api_router.get("/admin/subdomains")
+async def get_subdomains_admin(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    subdomains = await db.subdomains.find().to_list(length=None)
+    return subdomains
+
+@api_router.post("/admin/subdomains")
+async def create_subdomain(subdomain_data: dict, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    subdomain_data["id"] = str(uuid.uuid4())
+    await db.subdomains.insert_one(subdomain_data)
+    return {"message": "Subdomain created successfully"}
+
+@api_router.put("/admin/subdomains/{subdomain_id}")
+async def update_subdomain(subdomain_id: str, updates: dict, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    result = await db.subdomains.update_one({"id": subdomain_id}, {"$set": updates})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Subdomain not found")
+    return {"message": "Subdomain updated successfully"}
+
+@api_router.delete("/admin/subdomains/{subdomain_id}")
+async def delete_subdomain(subdomain_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    result = await db.subdomains.delete_one({"id": subdomain_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Subdomain not found")
+    return {"message": "Subdomain deleted successfully"}
+
+# Controls CRUD
+@api_router.get("/admin/controls")
+async def get_controls_admin(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    controls = await db.controls.find().to_list(length=None)
+    return controls
+
+@api_router.post("/admin/controls")
+async def create_control(control_data: dict, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    control_data["id"] = str(uuid.uuid4())
+    await db.controls.insert_one(control_data)
+    return {"message": "Control created successfully"}
+
+@api_router.put("/admin/controls/{control_id}")
+async def update_control(control_id: str, updates: dict, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    result = await db.controls.update_one({"id": control_id}, {"$set": updates})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Control not found")
+    return {"message": "Control updated successfully"}
+
+@api_router.delete("/admin/controls/{control_id}")
+async def delete_control(control_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    result = await db.controls.delete_one({"id": control_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Control not found")
+    return {"message": "Control deleted successfully"}
+
+# Metrics CRUD
+@api_router.get("/admin/metrics")
+async def get_metrics_admin(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    metrics = await db.metrics.find().to_list(length=None)
+    return metrics
+
+@api_router.post("/admin/metrics")
+async def create_metric(metric_data: dict, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    metric_data["id"] = str(uuid.uuid4())
+    await db.metrics.insert_one(metric_data)
+    return {"message": "Metric created successfully"}
+
+@api_router.put("/admin/metrics/{metric_id}")
+async def update_metric(metric_id: str, updates: dict, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    result = await db.metrics.update_one({"id": metric_id}, {"$set": updates})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Metric not found")
+    return {"message": "Metric updated successfully"}
+
+@api_router.delete("/admin/metrics/{metric_id}")
+async def delete_metric(metric_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    result = await db.metrics.delete_one({"id": metric_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Metric not found")
+    return {"message": "Metric deleted successfully"}
+
+# Questions CRUD
+@api_router.get("/admin/questions")
+async def get_questions_admin(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    questions = await db.questions.find().to_list(length=None)
+    return questions
+
+@api_router.post("/admin/questions")
+async def create_question(question_data: dict, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    question_data["id"] = str(uuid.uuid4())
+    await db.questions.insert_one(question_data)
+    return {"message": "Question created successfully"}
+
+@api_router.put("/admin/questions/{question_id}")
+async def update_question(question_id: str, updates: dict, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    result = await db.questions.update_one({"id": question_id}, {"$set": updates})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Question not found")
+    return {"message": "Question updated successfully"}
+
+@api_router.delete("/admin/questions/{question_id}")
+async def delete_question(question_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    result = await db.questions.delete_one({"id": question_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Question not found")
+    return {"message": "Question deleted successfully"}
+
 # Admin Content Management - Domains
 @api_router.get("/admin/domains", response_model=List[Domain])
 async def get_domains_admin(current_user: User = Depends(get_current_user)):
