@@ -219,7 +219,6 @@ const Dashboard = () => {
   const [currentAssessment, setCurrentAssessment] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { user, logout } = useAuth();
 
   useEffect(() => {
     loadAssessments();
