@@ -332,82 +332,208 @@ async def initialize_sample_data():
     
     await db.domains.insert_many(domains)
     
-    # Create sample subdomains, controls, metrics, and questions for first domain
-    domain_id = domains[0]["id"]
+    # Create comprehensive sample data for ALL domains
+    all_questions = []
     
-    # Sample subdomains
-    subdomains = [
-        {"id": str(uuid.uuid4()), "name": "Security Policies", "domain_id": domain_id},
-        {"id": str(uuid.uuid4()), "name": "Risk Management", "domain_id": domain_id}
-    ]
-    await db.subdomains.insert_many(subdomains)
-    
-    # Sample controls
-    controls = [
-        {"id": str(uuid.uuid4()), "name": "Policy Framework", "definition": "Established security policies and procedures that govern organizational security practices", "subdomain_id": subdomains[0]["id"]},
-        {"id": str(uuid.uuid4()), "name": "Risk Assessment", "definition": "Systematic process for identifying, analyzing, and evaluating security risks", "subdomain_id": subdomains[1]["id"]}
-    ]
-    await db.controls.insert_many(controls)
-    
-    # Sample metrics
-    metrics = [
-        {"id": str(uuid.uuid4()), "name": "Policy Coverage", "control_id": controls[0]["id"]},
-        {"id": str(uuid.uuid4()), "name": "Risk Identification", "control_id": controls[1]["id"]}
-    ]
-    await db.metrics.insert_many(metrics)
-    
-    # Sample questions with answers
-    questions = [
-        {
-            "id": str(uuid.uuid4()),
-            "question_text": "How comprehensive is your organization's information security policy framework?",
-            "domain_id": domain_id,
-            "subdomain_id": subdomains[0]["id"],
-            "control_id": controls[0]["id"],
-            "metric_id": metrics[0]["id"],
-            "answers": [
-                {"id": str(uuid.uuid4()), "answer_text": "No formal security policies exist", "score_value": 0},
-                {"id": str(uuid.uuid4()), "answer_text": "Basic security policies exist but are outdated", "score_value": 1},
-                {"id": str(uuid.uuid4()), "answer_text": "Some security policies exist covering key areas", "score_value": 2},
-                {"id": str(uuid.uuid4()), "answer_text": "Comprehensive policies exist but need regular updates", "score_value": 3},
-                {"id": str(uuid.uuid4()), "answer_text": "Well-documented, current policies covering all areas", "score_value": 4},
-                {"id": str(uuid.uuid4()), "answer_text": "Comprehensive, regularly updated policies with stakeholder input", "score_value": 5}
+    for domain_idx, domain in enumerate(domains):
+        domain_id = domain["id"]
+        
+        # Create subdomains for each domain
+        subdomains = []
+        if domain["name"] == "Information Security Governance":
+            subdomains = [
+                {"id": str(uuid.uuid4()), "name": "Security Policies", "domain_id": domain_id},
+                {"id": str(uuid.uuid4()), "name": "Risk Management", "domain_id": domain_id}
             ]
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "question_text": "How frequently does your organization conduct risk assessments?",
-            "domain_id": domain_id,
-            "subdomain_id": subdomains[1]["id"],
-            "control_id": controls[1]["id"],
-            "metric_id": metrics[1]["id"],
-            "answers": [
-                {"id": str(uuid.uuid4()), "answer_text": "No formal risk assessments are conducted", "score_value": 0},
-                {"id": str(uuid.uuid4()), "answer_text": "Risk assessments are conducted when issues arise", "score_value": 1},
-                {"id": str(uuid.uuid4()), "answer_text": "Annual risk assessments are conducted", "score_value": 2},
-                {"id": str(uuid.uuid4()), "answer_text": "Bi-annual risk assessments with some continuous monitoring", "score_value": 3},
-                {"id": str(uuid.uuid4()), "answer_text": "Quarterly assessments with regular monitoring", "score_value": 4},
-                {"id": str(uuid.uuid4()), "answer_text": "Continuous risk assessment with real-time monitoring", "score_value": 5}
+        elif domain["name"] == "Access Control":
+            subdomains = [
+                {"id": str(uuid.uuid4()), "name": "User Authentication", "domain_id": domain_id},
+                {"id": str(uuid.uuid4()), "name": "Authorization Management", "domain_id": domain_id}
             ]
-        }
+        elif domain["name"] == "Data Protection":
+            subdomains = [
+                {"id": str(uuid.uuid4()), "name": "Data Classification", "domain_id": domain_id},
+                {"id": str(uuid.uuid4()), "name": "Data Encryption", "domain_id": domain_id}
+            ]
+        elif domain["name"] == "Network Security":
+            subdomains = [
+                {"id": str(uuid.uuid4()), "name": "Firewall Management", "domain_id": domain_id},
+                {"id": str(uuid.uuid4()), "name": "Network Monitoring", "domain_id": domain_id}
+            ]
+        else:  # Incident Response
+            subdomains = [
+                {"id": str(uuid.uuid4()), "name": "Incident Detection", "domain_id": domain_id},
+                {"id": str(uuid.uuid4()), "name": "Response Procedures", "domain_id": domain_id}
+            ]
+        
+        await db.subdomains.insert_many(subdomains)
+        
+        # Create controls for each subdomain
+        controls = []
+        for subdomain in subdomains:
+            if "Policies" in subdomain["name"] or "Authentication" in subdomain["name"] or "Classification" in subdomain["name"] or "Firewall" in subdomain["name"] or "Detection" in subdomain["name"]:
+                control_name = f"{subdomain['name']} Framework"
+                control_def = f"Established {subdomain['name'].lower()} framework and procedures"
+            else:
+                control_name = f"{subdomain['name']} Process"
+                control_def = f"Systematic {subdomain['name'].lower()} process and controls"
+            
+            controls.append({
+                "id": str(uuid.uuid4()),
+                "name": control_name,
+                "definition": control_def,
+                "subdomain_id": subdomain["id"]
+            })
+        
+        await db.controls.insert_many(controls)
+        
+        # Create metrics for each control
+        metrics = []
+        for control in controls:
+            metrics.append({
+                "id": str(uuid.uuid4()),
+                "name": f"{control['name']} Effectiveness",
+                "control_id": control["id"]
+            })
+        
+        await db.metrics.insert_many(metrics)
+        
+        # Create questions for each domain
+        domain_questions = []
+        
+        if domain["name"] == "Information Security Governance":
+            domain_questions = [
+                {
+                    "question_text": "How comprehensive is your organization's information security policy framework?",
+                    "subdomain_id": subdomains[0]["id"],
+                    "control_id": controls[0]["id"],
+                    "metric_id": metrics[0]["id"]
+                },
+                {
+                    "question_text": "How frequently does your organization conduct risk assessments?",
+                    "subdomain_id": subdomains[1]["id"], 
+                    "control_id": controls[1]["id"],
+                    "metric_id": metrics[1]["id"]
+                }
+            ]
+        elif domain["name"] == "Access Control":
+            domain_questions = [
+                {
+                    "question_text": "How robust is your multi-factor authentication implementation?",
+                    "subdomain_id": subdomains[0]["id"],
+                    "control_id": controls[0]["id"],
+                    "metric_id": metrics[0]["id"]
+                },
+                {
+                    "question_text": "How effectively does your organization manage user access permissions?",
+                    "subdomain_id": subdomains[1]["id"],
+                    "control_id": controls[1]["id"],
+                    "metric_id": metrics[1]["id"]
+                }
+            ]
+        elif domain["name"] == "Data Protection":
+            domain_questions = [
+                {
+                    "question_text": "How comprehensive is your data classification scheme?",
+                    "subdomain_id": subdomains[0]["id"],
+                    "control_id": controls[0]["id"],
+                    "metric_id": metrics[0]["id"]
+                },
+                {
+                    "question_text": "How extensive is your data encryption coverage?",
+                    "subdomain_id": subdomains[1]["id"],
+                    "control_id": controls[1]["id"],
+                    "metric_id": metrics[1]["id"]
+                }
+            ]
+        elif domain["name"] == "Network Security":
+            domain_questions = [
+                {
+                    "question_text": "How effective is your firewall configuration and management?",
+                    "subdomain_id": subdomains[0]["id"],
+                    "control_id": controls[0]["id"],
+                    "metric_id": metrics[0]["id"]
+                },
+                {
+                    "question_text": "How comprehensive is your network monitoring and detection capability?",
+                    "subdomain_id": subdomains[1]["id"],
+                    "control_id": controls[1]["id"],
+                    "metric_id": metrics[1]["id"]
+                }
+            ]
+        else:  # Incident Response
+            domain_questions = [
+                {
+                    "question_text": "How effective is your incident detection and alerting system?",
+                    "subdomain_id": subdomains[0]["id"],
+                    "control_id": controls[0]["id"],
+                    "metric_id": metrics[0]["id"]
+                },
+                {
+                    "question_text": "How well-defined are your incident response procedures?",
+                    "subdomain_id": subdomains[1]["id"],
+                    "control_id": controls[1]["id"],
+                    "metric_id": metrics[1]["id"]
+                }
+            ]
+        
+        # Add standard answers to each question
+        for question_data in domain_questions:
+            question = {
+                "id": str(uuid.uuid4()),
+                "question_text": question_data["question_text"],
+                "domain_id": domain_id,
+                "subdomain_id": question_data["subdomain_id"],
+                "control_id": question_data["control_id"],
+                "metric_id": question_data["metric_id"],
+                "answers": [
+                    {"id": str(uuid.uuid4()), "answer_text": "Not implemented or very poor", "score_value": 0},
+                    {"id": str(uuid.uuid4()), "answer_text": "Basic implementation with significant gaps", "score_value": 1},
+                    {"id": str(uuid.uuid4()), "answer_text": "Partially implemented covering key areas", "score_value": 2},
+                    {"id": str(uuid.uuid4()), "answer_text": "Well implemented but needs improvement", "score_value": 3},
+                    {"id": str(uuid.uuid4()), "answer_text": "Comprehensive implementation with regular reviews", "score_value": 4},
+                    {"id": str(uuid.uuid4()), "answer_text": "Excellent implementation with continuous improvement", "score_value": 5}
+                ]
+            }
+            all_questions.append(question)
+    
+    await db.questions.insert_many(all_questions)
+    
+    # Create default admin users
+    admin_users = [
+        User(
+            first_name="Admin",
+            last_name="User", 
+            organization_name="System",
+            email="admin@secassess.com",
+            designation="System Administrator",
+            password_hash=hash_password("admin123"),
+            role="admin"
+        ),
+        User(
+            first_name="RKS",
+            last_name="Admin",
+            organization_name="Security Assessment",
+            email="rks9454@gmail.com", 
+            designation="Platform Administrator",
+            password_hash=hash_password("admin123"),
+            role="admin"
+        )
     ]
     
-    await db.questions.insert_many(questions)
+    for admin in admin_users:
+        await db.users.insert_one(admin.dict())
     
-    # Create default admin user
-    admin_user = User(
-        first_name="Admin",
-        last_name="User",
-        organization_name="System",
-        email="admin@secassess.com",
-        designation="System Administrator",
-        password_hash=hash_password("admin123"),
-        role="admin"
-    )
-    
-    await db.users.insert_one(admin_user.dict())
-    
-    return {"message": "Sample data initialized successfully", "admin_credentials": {"email": "admin@secassess.com", "password": "admin123"}}
+    return {
+        "message": "Complete sample data initialized successfully", 
+        "domains_created": len(domains),
+        "questions_per_domain": 2,
+        "total_questions": len(all_questions),
+        "admin_credentials": [
+            {"email": "admin@secassess.com", "password": "admin123"},
+            {"email": "rks9454@gmail.com", "password": "admin123"}
+        ]
+    }
 
 # Include the router in the main app
 app.include_router(api_router)
