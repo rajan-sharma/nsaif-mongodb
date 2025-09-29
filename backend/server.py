@@ -844,13 +844,13 @@ async def initialize_sample_data():
     if existing_domains > 0:
         return {"message": "Data already initialized"}
     
-    # Create sample domains
+    # Create sample domains - CORRECT DOMAIN NAMES
     domains = [
-        {"id": str(uuid.uuid4()), "name": "Information Security Governance", "description": "Overall security governance and management", "icon": "🏛️", "order": 1},
-        {"id": str(uuid.uuid4()), "name": "Access Control", "description": "User access and authentication controls", "icon": "🔐", "order": 2},
-        {"id": str(uuid.uuid4()), "name": "Data Protection", "description": "Data security and privacy measures", "icon": "🛡️", "order": 3},
-        {"id": str(uuid.uuid4()), "name": "Network Security", "description": "Network infrastructure security", "icon": "🌐", "order": 4},
-        {"id": str(uuid.uuid4()), "name": "Incident Response", "description": "Security incident handling procedures", "icon": "🚨", "order": 5}
+        {"id": str(uuid.uuid4()), "name": "Application", "description": "Application security and development practices", "icon": "💻", "order": 1},
+        {"id": str(uuid.uuid4()), "name": "Data Management", "description": "Data handling, storage, and security practices", "icon": "📊", "order": 2},
+        {"id": str(uuid.uuid4()), "name": "Model Development and Deployment", "description": "ML model lifecycle and deployment security", "icon": "🚀", "order": 3},
+        {"id": str(uuid.uuid4()), "name": "Model Governance", "description": "Model oversight, compliance, and risk management", "icon": "⚖️", "order": 4},
+        {"id": str(uuid.uuid4()), "name": "Infrastructure", "description": "Infrastructure security and management", "icon": "🏗️", "order": 5}
     ]
     
     await db.domains.insert_many(domains)
