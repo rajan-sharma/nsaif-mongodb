@@ -57,6 +57,7 @@ const useAuth = () => {
 // Login Component
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -69,21 +70,30 @@ const Login = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setMessage('');
 
     try {
-      const endpoint = isLogin ? '/auth/login' : '/auth/register';
-      const payload = isLogin 
-        ? { email: formData.email, password: formData.password }
-        : formData;
+      if (showForgotPassword) {
+        // Handle forgot password
+        await axios.post(`${API}/auth/forgot-password`, { email: formData.email });
+        setMessage('Password reset link sent to your email');
+        setShowForgotPassword(false);
+      } else {
+        const endpoint = isLogin ? '/auth/login' : '/auth/register';
+        const payload = isLogin 
+          ? { email: formData.email, password: formData.password }
+          : formData;
 
-      const response = await axios.post(`${API}${endpoint}`, payload);
-      login(response.data.token, response.data.user);
+        const response = await axios.post(`${API}${endpoint}`, payload);
+        login(response.data.token, response.data.user);
+      }
     } catch (error) {
       setError(error.response?.data?.detail || 'An error occurred');
     } finally {
@@ -94,6 +104,60 @@ const Login = () => {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  if (showForgotPassword) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Reset Password</h1>
+            <p className="text-gray-600">Enter your email to receive reset instructions</p>
+          </div>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
+            </div>
+          )}
+
+          {message && (
+            <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+              {message}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              {loading ? 'Sending...' : 'Send Reset Link'}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => setShowForgotPassword(false)}
+              className="text-blue-600 hover:text-blue-800 font-medium"
+            >
+              Back to Login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -108,6 +172,12 @@ const Login = () => {
         {error && (
           <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
             {error}
+          </div>
+        )}
+
+        {message && (
+          <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+            {message}
           </div>
         )}
 
@@ -200,13 +270,24 @@ const Login = () => {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-3">
           <button
             onClick={() => setIsLogin(!isLogin)}
             className="text-blue-600 hover:text-blue-800 font-medium"
           >
             {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
           </button>
+          
+          {isLogin && (
+            <div>
+              <button
+                onClick={() => setShowForgotPassword(true)}
+                className="text-gray-600 hover:text-gray-800 text-sm"
+              >
+                Forgot your password?
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -222,6 +303,11 @@ const AdminPanel = () => {
   const [selectedUserDashboard, setSelectedUserDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userLoading, setUserLoading] = useState(false);
+  const [showCreateUserForm, setShowCreateUserForm] = useState(false);
+  const [newUserData, setNewUserData] = useState({
+    first_name: '', last_name: '', email: '', organization_name: '',
+    designation: '', password: '', role: 'user'
+  });
 
   useEffect(() => {
     loadAdminData();
@@ -266,10 +352,27 @@ const AdminPanel = () => {
     const newStatus = currentStatus === 'active' ? 'blocked' : 'active';
     try {
       await axios.put(`${API}/admin/users/${userId}`, { status: newStatus });
-      loadAdminData(); // Refresh data
+      loadAdminData();
     } catch (error) {
       console.error('Error updating user status:', error);
       alert('Error updating user status');
+    }
+  };
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/admin/users`, newUserData);
+      setShowCreateUserForm(false);
+      setNewUserData({
+        first_name: '', last_name: '', email: '', organization_name: '',
+        designation: '', password: '', role: 'user'
+      });
+      loadAdminData();
+      alert('User created successfully');
+    } catch (error) {
+      console.error('Error creating user:', error);
+      alert(error.response?.data?.detail || 'Error creating user');
     }
   };
 
@@ -362,7 +465,7 @@ const AdminPanel = () => {
               <div className="p-6">
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={platformStats.scoring_trends}>
+                    <BarChart data={platformStats.scoring_trends || []}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="domain_name" />
                       <YAxis domain={[0, 5]} />
@@ -392,7 +495,7 @@ const AdminPanel = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {platformStats.recent_assessments.map((assessment) => (
+                      {(platformStats.recent_assessments || []).map((assessment) => (
                         <tr key={assessment.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {assessment.user_name}
@@ -475,7 +578,7 @@ const AdminPanel = () => {
                     <div className="bg-white rounded-lg shadow p-6">
                       <h3 className="text-xl font-semibold text-gray-900 mb-4">Domain Performance</h3>
                       <div className="space-y-4">
-                        {selectedUserDashboard.stats.domain_scores.map((domain) => (
+                        {(selectedUserDashboard.stats.domain_scores || []).map((domain) => (
                           <div key={domain.domain_id} className="border border-gray-200 rounded-lg p-4">
                             <div className="flex justify-between items-center">
                               <span className="font-medium text-gray-900">{domain.domain_name}</span>
@@ -517,7 +620,10 @@ const AdminPanel = () => {
             <div className="bg-white rounded-lg shadow">
               <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-gray-900">All Users</h3>
-                <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                <button 
+                  onClick={() => setShowCreateUserForm(true)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
                   Create New User
                 </button>
               </div>
@@ -585,6 +691,92 @@ const AdminPanel = () => {
             </div>
           </div>
         )}
+
+        {/* Create User Modal */}
+        {showCreateUserForm && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Create New User</h3>
+              
+              <form onSubmit={handleCreateUser} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <input
+                    type="text"
+                    placeholder="First Name"
+                    value={newUserData.first_name}
+                    onChange={(e) => setNewUserData({...newUserData, first_name: e.target.value})}
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="Last Name"
+                    value={newUserData.last_name}
+                    onChange={(e) => setNewUserData({...newUserData, last_name: e.target.value})}
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    required
+                  />
+                </div>
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={newUserData.email}
+                  onChange={(e) => setNewUserData({...newUserData, email: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Organization Name"
+                  value={newUserData.organization_name}
+                  onChange={(e) => setNewUserData({...newUserData, organization_name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Designation"
+                  value={newUserData.designation}
+                  onChange={(e) => setNewUserData({...newUserData, designation: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  required
+                />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={newUserData.password}
+                  onChange={(e) => setNewUserData({...newUserData, password: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  required
+                />
+                <select
+                  value={newUserData.role}
+                  onChange={(e) => setNewUserData({...newUserData, role: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+                
+                <div className="flex space-x-3">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700"
+                  >
+                    Create User
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateUserForm(false)}
+                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -604,6 +796,16 @@ const MainApp = () => {
   const [submitting, setSubmitting] = useState(false);
   const [showOverviewGraph, setShowOverviewGraph] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  
+  // Cascading dropdown states
+  const [selectedDomainForChart, setSelectedDomainForChart] = useState('');
+  const [selectedSubdomainForChart, setSelectedSubdomainForChart] = useState('');
+  const [selectedControlForChart, setSelectedControlForChart] = useState('');
+  const [subdomains, setSubdomains] = useState([]);
+  const [controls, setControls] = useState([]);
+  const [metrics, setMetrics] = useState([]);
+  const [radarData, setRadarData] = useState([]);
+  
   const { user, logout } = useAuth();
 
   useEffect(() => {
@@ -612,7 +814,6 @@ const MainApp = () => {
 
   useEffect(() => {
     if (assessments.length > 0 && !currentAssessment) {
-      // Sort assessments by submission_date to get the latest one
       const sortedAssessments = [...assessments].sort((a, b) => new Date(b.submission_date) - new Date(a.submission_date));
       setCurrentAssessment(sortedAssessments[0]);
     }
@@ -623,6 +824,12 @@ const MainApp = () => {
       loadAssessmentStats(currentAssessment.id);
     }
   }, [currentAssessment]);
+
+  useEffect(() => {
+    if (stats && stats.domain_scores) {
+      updateRadarChart();
+    }
+  }, [stats, selectedDomainForChart, selectedSubdomainForChart, selectedControlForChart]);
 
   const loadInitialData = async () => {
     try {
@@ -647,6 +854,180 @@ const MainApp = () => {
     } catch (error) {
       console.error('Error loading stats:', error);
     }
+  };
+
+  const loadSubdomains = async (domainId) => {
+    try {
+      const response = await axios.get(`${API}/admin/subdomains`);
+      const filteredSubdomains = response.data.filter(sub => sub.domain_id === domainId);
+      setSubdomains(filteredSubdomains);
+    } catch (error) {
+      console.error('Error loading subdomains:', error);
+    }
+  };
+
+  const loadControls = async (subdomainId) => {
+    try {
+      const response = await axios.get(`${API}/admin/controls`);
+      const filteredControls = response.data.filter(control => control.subdomain_id === subdomainId);
+      setControls(filteredControls);
+    } catch (error) {
+      console.error('Error loading controls:', error);
+    }
+  };
+
+  const loadMetrics = async (controlId) => {
+    try {
+      const response = await axios.get(`${API}/admin/metrics`);
+      const filteredMetrics = response.data.filter(metric => metric.control_id === controlId);
+      setMetrics(filteredMetrics);
+    } catch (error) {
+      console.error('Error loading metrics:', error);
+    }
+  };
+
+  const updateRadarChart = () => {
+    if (!stats || !stats.domain_scores) return;
+
+    let chartData = [];
+
+    if (!selectedDomainForChart) {
+      // Show all domains
+      chartData = stats.domain_scores.map(domain => ({
+        name: domain.domain_name,
+        score: domain.average_score
+      }));
+    } else if (!selectedSubdomainForChart) {
+      // Show subdomains for selected domain
+      chartData = subdomains.map(sub => ({
+        name: sub.name,
+        score: Math.random() * 5 // Placeholder - you'd calculate actual subdomain scores
+      }));
+    } else if (!selectedControlForChart) {
+      // Show controls for selected subdomain
+      chartData = controls.map(control => ({
+        name: control.name,
+        score: Math.random() * 5 // Placeholder
+      }));
+    } else {
+      // Show metrics for selected control
+      chartData = metrics.map(metric => ({
+        name: metric.name,
+        score: Math.random() * 5 // Placeholder
+      }));
+    }
+
+    setRadarData(chartData);
+  };
+
+  const handleDomainSelectForChart = async (domainId) => {
+    setSelectedDomainForChart(domainId);
+    setSelectedSubdomainForChart('');
+    setSelectedControlForChart('');
+    
+    if (domainId) {
+      await loadSubdomains(domainId);
+    } else {
+      setSubdomains([]);
+      setControls([]);
+      setMetrics([]);
+    }
+  };
+
+  const handleSubdomainSelectForChart = async (subdomainId) => {
+    setSelectedSubdomainForChart(subdomainId);
+    setSelectedControlForChart('');
+    
+    if (subdomainId) {
+      await loadControls(subdomainId);
+    } else {
+      setControls([]);
+      setMetrics([]);
+    }
+  };
+
+  const handleControlSelectForChart = async (controlId) => {
+    setSelectedControlForChart(controlId);
+    
+    if (controlId) {
+      await loadMetrics(controlId);
+    } else {
+      setMetrics([]);
+    }
+  };
+
+  const exportToPDF = () => {
+    // Simple PDF export using window.print()
+    const printWindow = window.open('', '_blank');
+    const currentDate = new Date().toLocaleDateString();
+    
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Assessment Dashboard Report</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 20px 0; }
+            .kpi-card { border: 1px solid #ccc; padding: 15px; text-align: center; }
+            .score-bar { width: 100%; height: 20px; background-color: #f0f0f0; border-radius: 10px; }
+            .score-fill { height: 100%; background: linear-gradient(to right, #ef4444, #f59e0b, #10b981); border-radius: 10px; }
+            @media print { body { -webkit-print-color-adjust: exact; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Security Assessment Dashboard Report</h1>
+            <p>Generated on: ${currentDate}</p>
+            <p>User: ${user?.email}</p>
+          </div>
+          
+          ${stats ? `
+            <div class="kpi-grid">
+              <div class="kpi-card">
+                <h3>Total Responses</h3>
+                <div style="font-size: 24px; font-weight: bold; color: #3b82f6;">${stats.total_responses}</div>
+              </div>
+              <div class="kpi-card">
+                <h3>Domains Completed</h3>
+                <div style="font-size: 24px; font-weight: bold; color: #10b981;">${stats.domains_completed}</div>
+              </div>
+              <div class="kpi-card">
+                <h3>Overall Average Score</h3>
+                <div style="font-size: 24px; font-weight: bold; color: #8b5cf6;">${stats.overall_average}/5</div>
+              </div>
+            </div>
+            
+            <div style="margin: 30px 0;">
+              <h2>Overall Assessment Score</h2>
+              <div class="score-bar">
+                <div class="score-fill" style="width: ${(stats.overall_average / 5) * 100}%;"></div>
+              </div>
+              <p style="text-align: center; margin-top: 10px;">Score: ${stats.overall_average}/5</p>
+            </div>
+            
+            <div style="margin: 30px 0;">
+              <h2>Domain Performance</h2>
+              ${(stats.domain_scores || []).map(domain => `
+                <div style="margin: 15px 0; padding: 10px; border: 1px solid #e5e7eb;">
+                  <div style="display: flex; justify-content: space-between;">
+                    <span><strong>${domain.domain_name}</strong></span>
+                    <span><strong>${domain.average_score}/5</strong></span>
+                  </div>
+                  <div class="score-bar" style="margin: 5px 0;">
+                    <div class="score-fill" style="width: ${(domain.average_score / 5) * 100}%;"></div>
+                  </div>
+                  <small>${domain.total_questions} questions answered</small>
+                </div>
+              `).join('')}
+            </div>
+          ` : '<p>No assessment data available.</p>'}
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+    printWindow.print();
   };
 
   const loadQuestionsForDomain = async (domainId) => {
@@ -696,7 +1077,6 @@ const MainApp = () => {
 
       await axios.post(`${API}/assessments/submit`, submissionData);
       
-      // Refresh assessments and redirect to dashboard
       await loadInitialData();
       setCurrentView('dashboard');
       setResponses({});
@@ -707,21 +1087,6 @@ const MainApp = () => {
       setSubmitting(false);
     }
   };
-
-  // Sample data for charts
-  const radarData = [
-    { domain: 'Information Security Governance', score: stats ? (stats.overall_average || 0) : 0 },
-    { domain: 'Access Control', score: stats ? (stats.overall_average * 0.9 || 0) : 0 },
-    { domain: 'Data Protection', score: stats ? (stats.overall_average * 1.1 || 0) : 0 },
-    { domain: 'Network Security', score: stats ? (stats.overall_average * 0.8 || 0) : 0 },
-    { domain: 'Incident Response', score: stats ? (stats.overall_average * 1.2 || 0) : 0 },
-  ];
-
-  const domainPerformanceData = domains.map(domain => ({
-    name: domain.name.substring(0, 15) + '...',
-    score: stats ? stats.overall_average + (Math.random() - 0.5) : Math.random() * 5,
-    questions: 2
-  }));
 
   if (loading) {
     return (
@@ -904,7 +1269,10 @@ const MainApp = () => {
                       >
                         {showAnalytics ? 'Hide Analytics' : 'Show Analytics'}
                       </button>
-                      <button className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                      <button 
+                        onClick={exportToPDF}
+                        className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                      >
                         Export PDF
                       </button>
                     </div>
@@ -913,11 +1281,59 @@ const MainApp = () => {
                     {showOverviewGraph && (
                       <div className="bg-white rounded-lg shadow p-6 mb-8">
                         <h3 className="text-xl font-semibold text-gray-900 mb-4">Overview Radar Chart</h3>
+                        
+                        {/* Cascading Dropdowns */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Domain:</label>
+                            <select
+                              value={selectedDomainForChart}
+                              onChange={(e) => handleDomainSelectForChart(e.target.value)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              <option value="">All Domains</option>
+                              {domains.map(domain => (
+                                <option key={domain.id} value={domain.id}>{domain.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Sub-domain:</label>
+                            <select
+                              value={selectedSubdomainForChart}
+                              onChange={(e) => handleSubdomainSelectForChart(e.target.value)}
+                              disabled={!selectedDomainForChart}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                            >
+                              <option value="">Select Sub-domain</option>
+                              {subdomains.map(subdomain => (
+                                <option key={subdomain.id} value={subdomain.id}>{subdomain.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Control:</label>
+                            <select
+                              value={selectedControlForChart}
+                              onChange={(e) => handleControlSelectForChart(e.target.value)}
+                              disabled={!selectedSubdomainForChart}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                            >
+                              <option value="">Select Control</option>
+                              {controls.map(control => (
+                                <option key={control.id} value={control.id}>{control.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        
                         <div className="h-96">
                           <ResponsiveContainer width="100%" height="100%">
                             <RadarChart data={radarData}>
                               <PolarGrid />
-                              <PolarAngleAxis dataKey="domain" />
+                              <PolarAngleAxis dataKey="name" />
                               <PolarRadiusAxis angle={90} domain={[0, 5]} />
                               <Radar name="Score" dataKey="score" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.3} />
                               <Tooltip />
@@ -959,43 +1375,40 @@ const MainApp = () => {
                           <p className="text-gray-600 mb-6">Click on any domain to view detailed control-level insights and performance metrics.</p>
                           <div className="h-64 mb-6">
                             <ResponsiveContainer width="100%" height="100%">
-                              <BarChart data={domainPerformanceData}>
+                              <BarChart data={stats.domain_scores || []}>
                                 <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
+                                <XAxis dataKey="domain_name" />
                                 <YAxis domain={[0, 5]} />
                                 <Tooltip />
                                 <Legend />
-                                <Bar dataKey="score" fill="#3B82F6" />
+                                <Bar dataKey="average_score" fill="#3B82F6" />
                               </BarChart>
                             </ResponsiveContainer>
                           </div>
                           
                           {/* Domain Cards */}
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {domains.map((domain, index) => {
-                              const score = (stats.overall_average + (Math.random() - 0.5)).toFixed(2);
-                              return (
-                                <div key={domain.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer">
-                                  <div className="flex items-center mb-2">
-                                    <span className="text-2xl mr-3">{domain.icon}</span>
-                                    <h4 className="font-semibold text-gray-900">{domain.name}</h4>
-                                  </div>
-                                  <div className="space-y-1 text-sm text-gray-600">
-                                    <p>Questions: 2</p>
-                                    <p>Completion: 100%</p>
-                                    <p>Average Score: {score}/5</p>
-                                  </div>
-                                  <div className="mt-2">
-                                    <div className="w-full bg-gray-200 rounded-full h-2">
-                                      <div
-                                        className="bg-blue-600 h-2 rounded-full"
-                                        style={{ width: `${(parseFloat(score) / 5) * 100}%` }}
-                                      ></div>
-                                    </div>
+                            {(stats.domain_scores || []).map((domain, index) => (
+                              <div key={domain.domain_id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer">
+                                <div className="flex items-center mb-2">
+                                  <span className="text-2xl mr-3">{domains.find(d => d.id === domain.domain_id)?.icon}</span>
+                                  <h4 className="font-semibold text-gray-900">{domain.domain_name}</h4>
+                                </div>
+                                <div className="space-y-1 text-sm text-gray-600">
+                                  <p>Questions: {domain.total_questions}</p>
+                                  <p>Completion: 100%</p>
+                                  <p>Average Score: {domain.average_score}/5</p>
+                                </div>
+                                <div className="mt-2">
+                                  <div className="w-full bg-gray-200 rounded-full h-2">
+                                    <div
+                                      className="bg-blue-600 h-2 rounded-full"
+                                      style={{ width: `${(domain.average_score / 5) * 100}%` }}
+                                    ></div>
                                   </div>
                                 </div>
-                              );
-                            })}
+                              </div>
+                            ))}
                           </div>
                         </div>
 
@@ -1004,28 +1417,24 @@ const MainApp = () => {
                           <div className="bg-green-50 rounded-lg p-6 border border-green-200">
                             <h3 className="text-xl font-semibold text-green-800 mb-4">🏆 Top Strengths</h3>
                             <div className="space-y-3">
-                              <div className="bg-white rounded p-3">
-                                <div className="font-medium text-green-700">Data Protection</div>
-                                <div className="text-sm text-gray-600">Average Score: {(stats.overall_average * 1.1).toFixed(2)}/5</div>
-                              </div>
-                              <div className="bg-white rounded p-3">
-                                <div className="font-medium text-green-700">Incident Response</div>
-                                <div className="text-sm text-gray-600">Average Score: {(stats.overall_average * 1.05).toFixed(2)}/5</div>
-                              </div>
+                              {(stats.top_strengths || []).map((strength, index) => (
+                                <div key={index} className="bg-white rounded p-3">
+                                  <div className="font-medium text-green-700">{strength.domain_name}</div>
+                                  <div className="text-sm text-gray-600">Average Score: {strength.average_score}/5</div>
+                                </div>
+                              ))}
                             </div>
                           </div>
 
                           <div className="bg-red-50 rounded-lg p-6 border border-red-200">
                             <h3 className="text-xl font-semibold text-red-800 mb-4">🎯 Focus Areas</h3>
                             <div className="space-y-3">
-                              <div className="bg-white rounded p-3">
-                                <div className="font-medium text-red-700">Network Security</div>
-                                <div className="text-sm text-gray-600">Average Score: {(stats.overall_average * 0.8).toFixed(2)}/5</div>
-                              </div>
-                              <div className="bg-white rounded p-3">
-                                <div className="font-medium text-red-700">Access Control</div>
-                                <div className="text-sm text-gray-600">Average Score: {(stats.overall_average * 0.9).toFixed(2)}/5</div>
-                              </div>
+                              {(stats.focus_areas || []).map((area, index) => (
+                                <div key={index} className="bg-white rounded p-3">
+                                  <div className="font-medium text-red-700">{area.domain_name}</div>
+                                  <div className="text-sm text-gray-600">Average Score: {area.average_score}/5</div>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         </div>
