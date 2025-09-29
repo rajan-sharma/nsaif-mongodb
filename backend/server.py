@@ -483,6 +483,7 @@ async def get_platform_stats(current_user: User = Depends(get_current_user)):
     # Get recent assessments with user details
     recent_assessments = await db.user_assessments.find().sort("submission_date", -1).limit(10).to_list(length=10)
     for assessment in recent_assessments:
+        assessment.pop('_id', None)  # Remove MongoDB _id
         user = await db.users.find_one({"id": assessment["user_id"]})
         assessment["user_name"] = f"{user['first_name']} {user['last_name']}" if user else "Unknown"
         assessment["user_email"] = user["email"] if user else "Unknown"
