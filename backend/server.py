@@ -384,6 +384,9 @@ async def get_all_users(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Admin access required")
     
     users = await db.users.find().to_list(length=None)
+    # Remove MongoDB _id field to avoid serialization issues
+    for user in users:
+        user.pop('_id', None)
     return users
 
 @api_router.post("/admin/users")
