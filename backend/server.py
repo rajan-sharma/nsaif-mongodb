@@ -440,10 +440,42 @@ async def get_platform_stats(current_user: User = Depends(get_current_user)):
     total_users = await db.users.count_documents({})
     admin_users = await db.users.count_documents({"role": "admin"})
     regular_users = await db.users.count_documents({"role": "user"})
+    active_users = await db.users.count_documents({"status": "active"})
+    blocked_users = await db.users.count_documents({"status": "blocked"})
     
     # Assessment statistics
     total_assessments = await db.user_assessments.count_documents({})
     total_responses = await db.user_responses.count_documents({})
+    
+    # Calculate overall scoring trends
+    all_responses = await db.user_responses.find().to_list(length=None)
+    overall_avg_score = 0
+    domain_scores = {}
+    
+    if all_responses:
+        total_score = sum(r["score_value"] for r in all_responses)
+        overall_avg_score = round(total_score / len(all_responses), 2)
+        
+        # Calculate domain-wise averages
+        for response in all_responses:
+            domain_id = response["domain_id"]
+            if domain_id not in domain_scores:
+                domain_scores[domain_id] = {"total": 0, "count": 0}
+            domain_scores[domain_id]["total"] += response["score_value"]
+            domain_scores[domain_id]["count"] += 1
+    
+    # Get domain names and calculate averages
+    domains = await db.domains.find().to_list(length=None)
+    domain_name_map = {d["id"]: d["name"] for d in domains}
+    
+    scoring_trends = []
+    for domain_id, data in domain_scores.items():
+        avg = round(data["total"] / data["count"], 2) if data["count"] > 0 else 0
+        scoring_trends.append({
+            "domain_name": domain_name_map.get(domain_id, "Unknown"),
+            "average_score": avg,
+            "total_responses": data["count"]
+        })
     
     # Get recent assessments with user details
     recent_assessments = await db.user_assessments.find().sort("submission_date", -1).limit(10).to_list(length=10)
@@ -473,15 +505,95 @@ async def get_platform_stats(current_user: User = Depends(get_current_user)):
         "user_stats": {
             "total_users": total_users,
             "admin_users": admin_users,
-            "regular_users": regular_users
+            "regular_users": regular_users,
+            "active_users": active_users,
+            "blocked_users": blocked_users
         },
         "assessment_stats": {
             "total_assessments": total_assessments,
             "total_responses": total_responses,
-            "average_responses_per_assessment": round(total_responses / total_assessments, 2) if total_assessments > 0 else 0
+            "average_responses_per_assessment": round(total_responses / total_assessments, 2) if total_assessments > 0 else 0,
+            "overall_average_score": overall_avg_score
         },
+        "scoring_trends": scoring_trends,
         "recent_assessments": recent_assessments,
         "user_activities": user_activities
+    }
+
+# Admin User-Specific Dashboard View
+@api_router.get("/admin/user-dashboard/{user_id}")
+async def get_user_dashboard_for_admin(user_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get user details
+    target_user = await db.users.find_one({"id": user_id})
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get user's assessments
+    assessments = await db.user_assessments.find({"user_id": user_id}).sort("submission_date", -1).to_list(length=None)
+    
+    if not assessments:
+        return {
+            "user": target_user,
+            "assessments": [],
+            "latest_assessment": None,
+            "stats": None
+        }
+    
+    # Get stats for latest assessment
+    latest_assessment = assessments[0]
+    responses = await db.user_responses.find({"assessment_id": latest_assessment["id"]}).to_list(length=None)
+    
+    if not responses:
+        stats = {"total_responses": 0, "domains_completed": 0, "overall_average": 0, "domain_scores": []}
+    else:
+        # Calculate comprehensive stats
+        total_responses = len(responses)
+        total_score = sum(response["score_value"] for response in responses)
+        overall_average = round(total_score / total_responses, 2) if total_responses > 0 else 0
+        unique_domains = set(response["domain_id"] for response in responses)
+        domains_completed = len(unique_domains)
+        
+        # Calculate domain-wise scores
+        domain_scores = {}
+        for response in responses:
+            domain_id = response["domain_id"]
+            if domain_id not in domain_scores:
+                domain_scores[domain_id] = {"scores": [], "total": 0, "count": 0}
+            domain_scores[domain_id]["scores"].append(response["score_value"])
+            domain_scores[domain_id]["total"] += response["score_value"]
+            domain_scores[domain_id]["count"] += 1
+        
+        # Get domain names
+        domains = await db.domains.find().to_list(length=None)
+        domain_name_map = {d["id"]: d["name"] for d in domains}
+        
+        # Format domain scores
+        domain_stats = []
+        for domain_id, data in domain_scores.items():
+            avg_score = round(data["total"] / data["count"], 2)
+            domain_stats.append({
+                "domain_id": domain_id,
+                "domain_name": domain_name_map.get(domain_id, "Unknown"),
+                "average_score": avg_score,
+                "total_questions": data["count"]
+            })
+        
+        stats = {
+            "total_responses": total_responses,
+            "domains_completed": domains_completed,
+            "overall_average": overall_average,
+            "submission_date": latest_assessment["submission_date"],
+            "domain_scores": domain_stats
+        }
+    
+    return {
+        "user": target_user,
+        "assessments": assessments,
+        "latest_assessment": latest_assessment,
+        "stats": stats
     }
 
 # Admin Content Management
