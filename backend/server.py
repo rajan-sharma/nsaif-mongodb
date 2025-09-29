@@ -924,76 +924,76 @@ async def initialize_sample_data():
         # Create questions for each domain
         domain_questions = []
         
-        if domain["name"] == "Information Security Governance":
+        if domain["name"] == "Application":
             domain_questions = [
                 {
-                    "question_text": "How comprehensive is your organization's information security policy framework?",
+                    "question_text": "How comprehensive are your application security code review practices?",
                     "subdomain_id": subdomains[0]["id"],
                     "control_id": controls[0]["id"],
                     "metric_id": metrics[0]["id"]
                 },
                 {
-                    "question_text": "How frequently does your organization conduct risk assessments?",
+                    "question_text": "How well-designed is your application architecture for security and scalability?",
                     "subdomain_id": subdomains[1]["id"], 
                     "control_id": controls[1]["id"],
                     "metric_id": metrics[1]["id"]
                 }
             ]
-        elif domain["name"] == "Access Control":
+        elif domain["name"] == "Data Management":
             domain_questions = [
                 {
-                    "question_text": "How robust is your multi-factor authentication implementation?",
+                    "question_text": "How robust are your data storage and backup strategies?",
                     "subdomain_id": subdomains[0]["id"],
                     "control_id": controls[0]["id"],
                     "metric_id": metrics[0]["id"]
                 },
                 {
-                    "question_text": "How effectively does your organization manage user access permissions?",
+                    "question_text": "How effectively do you manage data privacy and user consent?",
                     "subdomain_id": subdomains[1]["id"],
                     "control_id": controls[1]["id"],
                     "metric_id": metrics[1]["id"]
                 }
             ]
-        elif domain["name"] == "Data Protection":
+        elif domain["name"] == "Model Development and Deployment":
             domain_questions = [
                 {
-                    "question_text": "How comprehensive is your data classification scheme?",
+                    "question_text": "How systematic is your model development and testing process?",
                     "subdomain_id": subdomains[0]["id"],
                     "control_id": controls[0]["id"],
                     "metric_id": metrics[0]["id"]
                 },
                 {
-                    "question_text": "How extensive is your data encryption coverage?",
+                    "question_text": "How mature is your model deployment pipeline and monitoring?",
                     "subdomain_id": subdomains[1]["id"],
                     "control_id": controls[1]["id"],
                     "metric_id": metrics[1]["id"]
                 }
             ]
-        elif domain["name"] == "Network Security":
+        elif domain["name"] == "Model Governance":
             domain_questions = [
                 {
-                    "question_text": "How effective is your firewall configuration and management?",
+                    "question_text": "How comprehensive is your model oversight and risk management framework?",
                     "subdomain_id": subdomains[0]["id"],
                     "control_id": controls[0]["id"],
                     "metric_id": metrics[0]["id"]
                 },
                 {
-                    "question_text": "How comprehensive is your network monitoring and detection capability?",
+                    "question_text": "How well do you manage compliance and regulatory requirements for models?",
                     "subdomain_id": subdomains[1]["id"],
                     "control_id": controls[1]["id"],
                     "metric_id": metrics[1]["id"]
                 }
             ]
-        else:  # Incident Response
+        else:  # Infrastructure
             domain_questions = [
                 {
-                    "question_text": "How effective is your incident detection and alerting system?",
+                    "question_text": "How secure and well-managed is your infrastructure setup?",
                     "subdomain_id": subdomains[0]["id"],
                     "control_id": controls[0]["id"],
                     "metric_id": metrics[0]["id"]
                 },
                 {
-                    "question_text": "How well-defined are your incident response procedures?",
+                    "question_text": "How effective are your system monitoring and maintenance practices?",
                     "subdomain_id": subdomains[1]["id"],
                     "control_id": controls[1]["id"],
                     "metric_id": metrics[1]["id"]
