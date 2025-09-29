@@ -215,9 +215,13 @@ const Login = () => {
 
 // Admin Panel Component
 const AdminPanel = () => {
+  const [activeTab, setActiveTab] = useState('global-dashboard');
   const [platformStats, setPlatformStats] = useState(null);
   const [users, setUsers] = useState([]);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedUserDashboard, setSelectedUserDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userLoading, setUserLoading] = useState(false);
 
   useEffect(() => {
     loadAdminData();
@@ -239,6 +243,36 @@ const AdminPanel = () => {
     }
   };
 
+  const loadUserDashboard = async (userId) => {
+    if (!userId) return;
+    
+    setUserLoading(true);
+    try {
+      const response = await axios.get(`${API}/admin/user-dashboard/${userId}`);
+      setSelectedUserDashboard(response.data);
+    } catch (error) {
+      console.error('Error loading user dashboard:', error);
+    } finally {
+      setUserLoading(false);
+    }
+  };
+
+  const handleUserSelect = (userId) => {
+    setSelectedUserId(userId);
+    loadUserDashboard(userId);
+  };
+
+  const toggleUserStatus = async (userId, currentStatus) => {
+    const newStatus = currentStatus === 'active' ? 'blocked' : 'active';
+    try {
+      await axios.put(`${API}/admin/users/${userId}`, { status: newStatus });
+      loadAdminData(); // Refresh data
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      alert('Error updating user status');
+    }
+  };
+
   if (loading) {
     return (
       <div className="p-6">
@@ -253,16 +287,55 @@ const AdminPanel = () => {
   return (
     <div className="p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Admin Panel</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Admin Portal</h1>
 
-        {/* Platform Statistics */}
-        {platformStats && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Tab Navigation */}
+        <div className="border-b border-gray-200 mb-8">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('global-dashboard')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'global-dashboard'
+                  ? 'border-red-500 text-red-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Global Dashboard
+            </button>
+            <button
+              onClick={() => setActiveTab('user-specific')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'user-specific'
+                  ? 'border-red-500 text-red-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              User-Specific View
+            </button>
+            <button
+              onClick={() => setActiveTab('user-management')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'user-management'
+                  ? 'border-red-500 text-red-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              User Management
+            </button>
+          </nav>
+        </div>
+
+        {/* Global Dashboard Tab */}
+        {activeTab === 'global-dashboard' && platformStats && (
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Platform-Wide Metrics</h2>
+            
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <div className="bg-white rounded-lg shadow p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Users</h3>
                 <div className="text-3xl font-bold text-blue-600">{platformStats.user_stats.total_users}</div>
-                <div className="text-sm text-gray-500">Admin: {platformStats.user_stats.admin_users} | Users: {platformStats.user_stats.regular_users}</div>
+                <div className="text-sm text-gray-500">Active: {platformStats.user_stats.active_users} | Blocked: {platformStats.user_stats.blocked_users}</div>
               </div>
               <div className="bg-white rounded-lg shadow p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Assessments</h3>
@@ -270,16 +343,183 @@ const AdminPanel = () => {
                 <div className="text-sm text-gray-500">Responses: {platformStats.assessment_stats.total_responses}</div>
               </div>
               <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Avg Responses</h3>
-                <div className="text-3xl font-bold text-purple-600">{platformStats.assessment_stats.average_responses_per_assessment}</div>
-                <div className="text-sm text-gray-500">Per Assessment</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Overall Score</h3>
+                <div className="text-3xl font-bold text-purple-600">{platformStats.assessment_stats.overall_average_score}/5</div>
+                <div className="text-sm text-gray-500">Platform Average</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">User Roles</h3>
+                <div className="text-xl font-bold text-orange-600">Admin: {platformStats.user_stats.admin_users}</div>
+                <div className="text-xl font-bold text-teal-600">Users: {platformStats.user_stats.regular_users}</div>
               </div>
             </div>
 
-            {/* User Management */}
+            {/* Scoring Trends */}
             <div className="bg-white rounded-lg shadow mb-8">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">User Management</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Overall Scoring Trends</h3>
+              </div>
+              <div className="p-6">
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={platformStats.scoring_trends}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="domain_name" />
+                      <YAxis domain={[0, 5]} />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="average_score" fill="#8884d8" name="Average Score" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Assessments */}
+            <div className="bg-white rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Recent Assessments</h3>
+              </div>
+              <div className="p-6">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submission Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assessment ID</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {platformStats.recent_assessments.map((assessment) => (
+                        <tr key={assessment.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {assessment.user_name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {assessment.user_email}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(assessment.submission_date).toLocaleString()}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {assessment.id.substring(0, 8)}...
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* User-Specific View Tab */}
+        {activeTab === 'user-specific' && (
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">User-Specific Dashboard View</h2>
+            
+            {/* User Selection */}
+            <div className="bg-white rounded-lg shadow p-6 mb-8">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select User:</label>
+              <select
+                value={selectedUserId}
+                onChange={(e) => handleUserSelect(e.target.value)}
+                className="w-full max-w-md px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+                <option value="">Select a user...</option>
+                {users.filter(u => u.role === 'user').map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.first_name} {user.last_name} ({user.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* User Dashboard Display */}
+            {userLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                <span className="ml-3 text-gray-600">Loading user dashboard...</span>
+              </div>
+            ) : selectedUserDashboard ? (
+              <div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <h3 className="font-semibold text-blue-900">
+                    Viewing Dashboard for: {selectedUserDashboard.user.first_name} {selectedUserDashboard.user.last_name}
+                  </h3>
+                  <p className="text-blue-700">{selectedUserDashboard.user.email} - {selectedUserDashboard.user.organization_name}</p>
+                </div>
+
+                {selectedUserDashboard.stats ? (
+                  <div>
+                    {/* User's KPI Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                      <div className="bg-white rounded-lg shadow p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Responses</h3>
+                        <div className="text-3xl font-bold text-blue-600">{selectedUserDashboard.stats.total_responses}</div>
+                      </div>
+                      <div className="bg-white rounded-lg shadow p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Domains Completed</h3>
+                        <div className="text-3xl font-bold text-green-600">{selectedUserDashboard.stats.domains_completed}</div>
+                      </div>
+                      <div className="bg-white rounded-lg shadow p-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Overall Score</h3>
+                        <div className="text-3xl font-bold text-purple-600">{selectedUserDashboard.stats.overall_average}/5</div>
+                      </div>
+                    </div>
+
+                    {/* User's Domain Scores */}
+                    <div className="bg-white rounded-lg shadow p-6">
+                      <h3 className="text-xl font-semibold text-gray-900 mb-4">Domain Performance</h3>
+                      <div className="space-y-4">
+                        {selectedUserDashboard.stats.domain_scores.map((domain) => (
+                          <div key={domain.domain_id} className="border border-gray-200 rounded-lg p-4">
+                            <div className="flex justify-between items-center">
+                              <span className="font-medium text-gray-900">{domain.domain_name}</span>
+                              <span className="text-lg font-bold text-blue-600">{domain.average_score}/5</span>
+                            </div>
+                            <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-blue-600 h-2 rounded-full"
+                                style={{ width: `${(domain.average_score / 5) * 100}%` }}
+                              ></div>
+                            </div>
+                            <div className="text-sm text-gray-500 mt-1">
+                              {domain.total_questions} questions answered
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+                    <p className="text-gray-600">This user has not completed any assessments yet.</p>
+                  </div>
+                )}
+              </div>
+            ) : selectedUserId ? (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+                <p className="text-gray-600">Please select a user to view their dashboard.</p>
+              </div>
+            ) : null}
+          </div>
+        )}
+
+        {/* User Management Tab */}
+        {activeTab === 'user-management' && (
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">User Management</h2>
+            
+            <div className="bg-white rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900">All Users</h3>
+                <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                  Create New User
+                </button>
               </div>
               <div className="p-6">
                 <div className="overflow-x-auto">
@@ -291,6 +531,7 @@ const AdminPanel = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organization</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -313,12 +554,27 @@ const AdminPanel = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              user.status === 'active' 
+                              (user.status || 'active') === 'active' 
                                 ? 'bg-green-100 text-green-800' 
                                 : 'bg-red-100 text-red-800'
                             }`}>
                               {user.status || 'active'}
                             </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button 
+                              onClick={() => toggleUserStatus(user.id, user.status || 'active')}
+                              className={`mr-2 px-3 py-1 rounded text-xs ${
+                                (user.status || 'active') === 'active'
+                                  ? 'bg-red-100 text-red-800 hover:bg-red-200'
+                                  : 'bg-green-100 text-green-800 hover:bg-green-200'
+                              }`}
+                            >
+                              {(user.status || 'active') === 'active' ? 'Block' : 'Activate'}
+                            </button>
+                            <button className="px-3 py-1 bg-blue-100 text-blue-800 rounded text-xs hover:bg-blue-200">
+                              Edit
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -327,35 +583,7 @@ const AdminPanel = () => {
                 </div>
               </div>
             </div>
-
-            {/* User Activity */}
-            <div className="bg-white rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">User Assessment Activity</h3>
-              </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {platformStats.user_activities.map((activity) => (
-                    <div key={activity.user_id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="font-medium text-gray-900">{activity.name}</div>
-                      <div className="text-sm text-gray-600">{activity.email}</div>
-                      <div className="text-sm text-gray-500">{activity.organization}</div>
-                      <div className="mt-2">
-                        <span className="text-sm font-medium text-blue-600">
-                          {activity.assessment_count} assessments
-                        </span>
-                        {activity.latest_assessment && (
-                          <div className="text-xs text-gray-500">
-                            Last: {new Date(activity.latest_assessment).toLocaleDateString()}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </>
+          </div>
         )}
       </div>
     </div>
