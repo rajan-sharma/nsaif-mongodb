@@ -492,6 +492,7 @@ async def get_platform_stats(current_user: User = Depends(get_current_user)):
     user_activities = []
     users = await db.users.find({"role": "user"}).to_list(length=None)
     for user in users:
+        user.pop('_id', None)  # Remove MongoDB _id
         assessment_count = await db.user_assessments.count_documents({"user_id": user["id"]})
         latest_assessment = await db.user_assessments.find_one({"user_id": user["id"]}, sort=[("submission_date", -1)])
         
