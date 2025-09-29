@@ -665,6 +665,8 @@ async def get_subdomains_admin(current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     subdomains = await db.subdomains.find().to_list(length=None)
+    for subdomain in subdomains:
+        subdomain.pop('_id', None)
     return subdomains
 
 @api_router.post("/admin/subdomains")
@@ -699,6 +701,8 @@ async def get_controls_admin(current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     controls = await db.controls.find().to_list(length=None)
+    for control in controls:
+        control.pop('_id', None)
     return controls
 
 @api_router.post("/admin/controls")
@@ -733,6 +737,8 @@ async def get_metrics_admin(current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     metrics = await db.metrics.find().to_list(length=None)
+    for metric in metrics:
+        metric.pop('_id', None)
     return metrics
 
 @api_router.post("/admin/metrics")
@@ -767,6 +773,8 @@ async def get_questions_admin(current_user: User = Depends(get_current_user)):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     questions = await db.questions.find().to_list(length=None)
+    for question in questions:
+        question.pop('_id', None)
     return questions
 
 @api_router.post("/admin/questions")
