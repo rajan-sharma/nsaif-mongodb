@@ -536,8 +536,12 @@ async def get_user_dashboard_for_admin(user_id: str, current_user: User = Depend
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    target_user.pop('_id', None)  # Remove MongoDB _id
+    
     # Get user's assessments
     assessments = await db.user_assessments.find({"user_id": user_id}).sort("submission_date", -1).to_list(length=None)
+    for assessment in assessments:
+        assessment.pop('_id', None)  # Remove MongoDB _id
     
     if not assessments:
         return {
