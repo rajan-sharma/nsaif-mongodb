@@ -191,6 +191,23 @@ async def login_user(login_data: UserLogin):
     token = create_token(user["id"], user["role"])
     return {"token": token, "user": {"id": user["id"], "email": user["email"], "role": user["role"]}}
 
+@api_router.post("/auth/forgot-password")
+async def forgot_password(email_data: dict):
+    """Placeholder for forgot password functionality"""
+    # In a real implementation, you would:
+    # 1. Verify the email exists
+    # 2. Generate a reset token
+    # 3. Send email with reset link
+    # 4. Store the token with expiry
+    
+    user = await db.users.find_one({"email": email_data["email"]})
+    if not user:
+        # Don't reveal if email exists or not for security
+        return {"message": "If the email exists, a reset link has been sent"}
+    
+    # Simulate sending email
+    return {"message": "Password reset link sent to your email"}
+
 # Assessment endpoints
 @api_router.get("/domains", response_model=List[Domain])
 async def get_domains():
