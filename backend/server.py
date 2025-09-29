@@ -863,30 +863,30 @@ async def initialize_sample_data():
         
         # Create subdomains for each domain
         subdomains = []
-        if domain["name"] == "Information Security Governance":
+        if domain["name"] == "Application":
             subdomains = [
-                {"id": str(uuid.uuid4()), "name": "Security Policies", "domain_id": domain_id},
-                {"id": str(uuid.uuid4()), "name": "Risk Management", "domain_id": domain_id}
+                {"id": str(uuid.uuid4()), "name": "Code Security", "domain_id": domain_id},
+                {"id": str(uuid.uuid4()), "name": "Application Architecture", "domain_id": domain_id}
             ]
-        elif domain["name"] == "Access Control":
+        elif domain["name"] == "Data Management":
             subdomains = [
-                {"id": str(uuid.uuid4()), "name": "User Authentication", "domain_id": domain_id},
-                {"id": str(uuid.uuid4()), "name": "Authorization Management", "domain_id": domain_id}
+                {"id": str(uuid.uuid4()), "name": "Data Storage", "domain_id": domain_id},
+                {"id": str(uuid.uuid4()), "name": "Data Privacy", "domain_id": domain_id}
             ]
-        elif domain["name"] == "Data Protection":
+        elif domain["name"] == "Model Development and Deployment":
             subdomains = [
-                {"id": str(uuid.uuid4()), "name": "Data Classification", "domain_id": domain_id},
-                {"id": str(uuid.uuid4()), "name": "Data Encryption", "domain_id": domain_id}
+                {"id": str(uuid.uuid4()), "name": "Model Development", "domain_id": domain_id},
+                {"id": str(uuid.uuid4()), "name": "Deployment Pipeline", "domain_id": domain_id}
             ]
-        elif domain["name"] == "Network Security":
+        elif domain["name"] == "Model Governance":
             subdomains = [
-                {"id": str(uuid.uuid4()), "name": "Firewall Management", "domain_id": domain_id},
-                {"id": str(uuid.uuid4()), "name": "Network Monitoring", "domain_id": domain_id}
+                {"id": str(uuid.uuid4()), "name": "Model Oversight", "domain_id": domain_id},
+                {"id": str(uuid.uuid4()), "name": "Compliance Management", "domain_id": domain_id}
             ]
-        else:  # Incident Response
+        else:  # Infrastructure
             subdomains = [
-                {"id": str(uuid.uuid4()), "name": "Incident Detection", "domain_id": domain_id},
-                {"id": str(uuid.uuid4()), "name": "Response Procedures", "domain_id": domain_id}
+                {"id": str(uuid.uuid4()), "name": "Infrastructure Security", "domain_id": domain_id},
+                {"id": str(uuid.uuid4()), "name": "System Management", "domain_id": domain_id}
             ]
         
         await db.subdomains.insert_many(subdomains)
